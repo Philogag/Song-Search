@@ -1,0 +1,51 @@
+version: "3"
+
+services:
+
+  nginx:
+    image: nginx:alpine
+    container_name: sport_meeting_nginx
+    restart: unless-stopped
+    ports:
+      - 80:80
+    volumes:
+      - ./nginx:/etc/nginx/conf.d
+      - ../frontend/desktop/dist:/dist/desktop
+
+  sql:
+    image: postgres:14.1-alpine
+    container_name: sport_meeting_pgsql
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data:/var/lib/postgresql/data
+    environment:
+      ALLOW_IP_RANGE: 0.0.0.0/0
+
+#  redis:
+#    image: redis:6.2-alpine
+#    restart: unless-stopped
+#    command:
+#      - "redis-server /etc/redis/redis.conf"
+#    ports:
+#      - "6379:6379"
+#    volumes:
+#      - ./conf/redis.conf:/etc/redis/redis.conf
+#      - ./data:/data
+
+  backend:
+    build: 
+      context: .
+      dockerfile: dockerfile/backend.Dockerfile
+    container_name: sport_meeting_backend
+    restart: unless-stopped
+    command: gunicorn -c backend/gunicorn.py backend.app_entry:flask_app
+    volumes:
+      - ../backend:/deploy/src/backend
+      - ./log:/deploy/src/log
+    ports:
+      - "8080:8080"
+    environment:
+      FLASK_CONFIG_TOML: "./backend/app.production.toml"
+  
