@@ -1,6 +1,7 @@
 import os
 import time
 
+import pymilvus
 import redis
 from flask import Flask
 from flask_caching import Cache
@@ -9,19 +10,28 @@ from flask_sqlalchemy import SQLAlchemy
 
 from backend.utility.config_helper import FlaskConfig
 from backend.utility.json_encoder_helper import CustomJsonEncoder
+from backend.utility.message_queue_helper import MessageQueue
 
 """
 禁止全局引用backend中的函数
 以免循环引用
 """
 
+"""数据库"""
 db = SQLAlchemy()
+
+"""向量数据库"""
+milvus_db = pymilvus.Connections()
 
 """缓存"""
 cache = Cache()
 
 """Redis"""
 redis_client = redis.Redis()
+
+"""消息队列"""
+message_queue = MessageQueue()
+
 
 """Json Web Tokens"""
 jwt = JWTManager()
@@ -69,6 +79,11 @@ def create_flask_app(
 
     # Load Redis.
     #
+    global message_queue
+    message_queue = MessageQueue(flask_config.rabbit_mq.get_uri())
+
+    global milvus_db
+    milvus_db = pymilvus.connections.connect('default', host=flask_config.milvus.host, port=flask_config.milvus.port)
 
     # Load Login Manager.
     # from backend.utility.login_manager_helper import init_login_manager

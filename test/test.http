@@ -1,0 +1,21 @@
+## Login
+POST http://localhost:5000/api/v1/auth/login
+Content-Type: application/json
+
+{
+    "username": "philogag",
+    "password": "root"
+}
+
+> {%
+    client.global.set("access_token", response.body.result.token.accessToken);
+%}
+
+#### search
+GET http://localhost:5000/api/v1/search/?search_text=千山鸟飞绝，万径人踪灭。
+Authorization: Bearer {{access_token}}
+
+
+#### train
+GET http://localhost:5000/api/v1/model-meta/run-train/aaa
+Authorization: Bearer {{access_token}}

@@ -18,7 +18,7 @@ manager.add_command(
 manager.add_command("generate_system_roles", generate_system_roles.GenerateSystemRoles)
 manager.add_command("generate_super_user", generate_super_user.GenerateSuperUser)
 manager.add_command("generate_basic_menu", generate_basic_menu.GenerateBasicMenu)
-# manager.add_command("generate_area", generate_area.GenerateArea)
+manager.add_command("insert_data", insert.Insert)
 
 if __name__ == "__main__":
     manager.run()

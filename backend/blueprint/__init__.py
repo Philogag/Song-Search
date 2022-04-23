@@ -80,6 +80,5 @@ def get_current_user_info():
     user_id = get_current_user_id()
     return CurrentUserInfo(
         id=user_id,
-        organization_id=get_user_organization_id(user_id),
         current_role_code=get_user_current_role_code(user_id),
     )

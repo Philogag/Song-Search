@@ -1,6 +1,5 @@
 import json
 from datetime import datetime
-from typing import List
 
 from sqlalchemy import Column, DateTime, String, Text, func
 from sqlalchemy.ext.declarative import declarative_base
@@ -40,9 +39,17 @@ class SqlAlchemyUOW:
     entity: UnitOfWorkEntity
     transaction: Transaction
 
-    def __init__(self, handler, action: str, action_params):
+    def __init__(self, handler, action: str, action_params: dict, save_uow_log: bool = True):
+        """
+
+        :param handler: 执行者
+        :param action: 任务名称
+        :param action_params: 任务内容
+        :param save_uow_log: 是否保存UOW记录，通常心跳更新时为False
+        """
         if not hasattr(handler, "id"):
             raise InvalidClassAttrError(handler, "id")
+        self.save_uow_log = save_uow_log
 
         self.entity = UnitOfWorkEntity(
             id=generate_uuid_id(),
@@ -69,7 +76,8 @@ class SqlAlchemyUOW:
     def __exit__(self, exc_type, exc_val, exc_tb):
         if exc_type:  # 捕获异常时直接退出
             raise exc_val
-        self.entity.handled_end_at = datetime.utcnow()
-        db.session.add(self.entity)
+        if self.save_uow_log:
+            self.entity.handled_end_at = datetime.utcnow()
+            db.session.add(self.entity)
         db.session.commit()
         return self

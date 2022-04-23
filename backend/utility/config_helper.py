@@ -15,23 +15,16 @@ class LoggerConfig(BaseModel):
     config_file: str
 
 
-class DatabaseConfig(BaseModel):
+class ConnectionConfig(BaseModel):
     type: Optional[str]
     host: str
-    port: Union[int, str]
-    db: str
-    username: str
-    password: str
+    port: Optional[Union[int, str]]
+    db: Optional[Union[int, str]]
+    username: Optional[str]
+    password: Optional[str]
 
     def get_uri(self):
         return f"{self.type}://{self.username}:{self.password}@{self.host}:{self.port}/{self.db}"
-
-
-class RedisConfig(BaseModel):
-    host: str
-    port: Union[int, str]
-    db: int
-    password: str
 
 
 class JWTConfig(BaseModel):
@@ -47,8 +40,10 @@ class FlaskConfig(BaseModel):
     secret_key: str
     timezone: str = "Asia/Shanghai"
 
-    db: DatabaseConfig
-    redis: RedisConfig
+    db: ConnectionConfig
+    redis: ConnectionConfig
+    rabbit_mq: ConnectionConfig
+    milvus: ConnectionConfig
     jwt: JWTConfig
     logger: LoggerConfig
 
