@@ -30,6 +30,14 @@ basic_menu_item = [
         icon="gala:menu-left",
         title="菜单配置",
     ),
+    MenuEm(
+        path="/system-config/role",
+        component="/system-config/role/index",
+        name="RoleConfig",
+        order=19002,
+        icon="eos-icons:role-binding-outlined",
+        title="角色管理",
+    ),
 ]
 
 

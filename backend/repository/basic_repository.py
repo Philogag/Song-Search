@@ -33,13 +33,14 @@ from backend.utility.error_helper import (
     InvalidSqlAlchemyClassWithIdError,
 )
 from backend.utility.string_helper import generate_random_string, generate_uuid_id, is_blank
-
 # project library
-
+from backend.utility.type_helper import is_simple_iterable
 
 GenericData = TypeVar("GenericData", bound=BaseModel)
+ModelClassType = TypeVar("ModelClassType", bound=BaseModel)
+EntityClassType = TypeVar("EntityClassType", bound=BaseModel)
 
-logger = logging.getLogger("repository")
+logger = logging.getLogger('repository')
 
 
 class BasicRepository:
@@ -47,8 +48,8 @@ class BasicRepository:
     Repository 基类
     """
 
-    __entity_cls__ = None
-    __model_cls__ = None
+    __entity_cls__: Type[EntityClassType] = None
+    __model_cls__: Type[EntityClassType] = None
 
     @staticmethod
     def _fetch_all_for_dict(sql: str, params: Dict[str, Any] = None) -> List:
@@ -64,7 +65,7 @@ class BasicRepository:
 
     @staticmethod
     def _fetch_all(
-        model_cls: Type[GenericData], sql: str, params: Dict[str, Any] = None
+            model_cls: Type[GenericData], sql: str, params: Dict[str, Any] = None
     ) -> List[GenericData]:
         """
          获取对应sql和参数的所有记录
@@ -79,7 +80,7 @@ class BasicRepository:
 
     @staticmethod
     def _fetch_first(
-        model_cls: Type[GenericData], sql: str, params: Dict[str, Any] = None
+            model_cls: Type[GenericData], sql: str, params: Dict[str, Any] = None
     ) -> Optional[GenericData]:
         """
          获取对应sql和参数的对应第一条数据
@@ -128,7 +129,7 @@ class BasicRepository:
 
     @staticmethod
     def _get_model_by_id(
-        model_cls: Type[GenericData], entity_cls: SqlAlchemyEntity, model_id: str
+            model_cls: Type[GenericData], entity_cls: SqlAlchemyEntity, model_id: str
     ) -> Optional[GenericData]:
         """
         根据数据库对象id来获取对象
@@ -147,9 +148,9 @@ class BasicRepository:
 
     @staticmethod
     def _get_model_by_params(
-        model_cls: Type[GenericData],
-        entity_cls: SqlAlchemyEntity,
-        params: Dict[str, Any] = None,
+            model_cls: Type[GenericData],
+            entity_cls: SqlAlchemyEntity,
+            params: Dict[str, Any] = None,
     ) -> Optional[GenericData]:
         """
         将完全等于字典列举条件的对象捞出来第一个
@@ -163,9 +164,9 @@ class BasicRepository:
 
     @staticmethod
     def _get_model_list_by_params(
-        model_cls: Type[GenericData],
-        entity_cls: SqlAlchemyEntity,
-        params: Dict[str, Any],
+            model_cls: Type[GenericData],
+            entity_cls: SqlAlchemyEntity,
+            params: Dict[str, Any],
     ) -> List[GenericData]:
         """
         将完全等于字典列举条件的对象以列表形式捞出来
@@ -178,7 +179,7 @@ class BasicRepository:
 
     @staticmethod
     def _get_dict_list_by_params(
-        entity_cls: SqlAlchemyEntity, params: Dict[str, Any]
+            entity_cls: SqlAlchemyEntity, params: Dict[str, Any]
     ) -> List:
         """
         将完全等于字典列举条件的对象以列表形式捞出来
@@ -191,9 +192,9 @@ class BasicRepository:
 
     @staticmethod
     def _get_entities_count_by_params_exclude_self(
-        entity_cls: SqlAlchemyEntity,
-        params: Dict[str, Any] = None,
-        entity_id: str = None,
+            entity_cls: SqlAlchemyEntity,
+            params: Dict[str, Any] = None,
+            entity_id: str = None,
     ) -> int:
         """
         統計完全等于字典列举条件并且id不等於輸入的id的对象的個數
@@ -214,7 +215,7 @@ class BasicRepository:
 
     @staticmethod
     def _insert_entity(
-        entity_cls: SqlAlchemyEntity, data: BasicEditModel, transaction: Transaction
+            entity_cls: SqlAlchemyEntity, data: BasicEditModel, transaction: Transaction
     ) -> str:
         """
         根据字典信息来插入数据库数据
@@ -245,7 +246,7 @@ class BasicRepository:
 
     @staticmethod
     def _insert_entity_by_dict(
-        entity_cls: SqlAlchemyEntity, entity_data: Dict, transaction: Transaction
+            entity_cls: SqlAlchemyEntity, entity_data: Dict, transaction: Transaction
     ) -> str:
         """
         根据字典信息来插入数据库数据
@@ -275,10 +276,10 @@ class BasicRepository:
 
     @staticmethod
     def _update_entity(
-        entity_cls: SqlAlchemyEntity,
-        data: BasicEditModel,
-        transaction: Transaction,
-        col_list: List = None,
+            entity_cls: SqlAlchemyEntity,
+            data: BasicEditModel,
+            transaction: Transaction,
+            col_list: List = None,
     ):
         """
         根据字典信息来更新数据库数据
@@ -316,7 +317,7 @@ class BasicRepository:
 
     @staticmethod
     def _delete_entity_by_id(
-        entity_cls: SqlAlchemyEntity, entity_id: str, transaction: Transaction
+            entity_cls: SqlAlchemyEntity, entity_id: str, transaction: Transaction
     ):
         """
         根据类和id来删除对应的数据
@@ -340,7 +341,7 @@ class BasicRepository:
 
     @staticmethod
     def _delete_entity_by_params(
-        entity_cls: SqlAlchemyEntity, params: dict, transaction: Transaction
+            entity_cls: SqlAlchemyEntity, params: dict, transaction: Transaction
     ):
         """
         根据参数删除实体
@@ -359,7 +360,7 @@ class BasicRepository:
 
     @staticmethod
     def _delete_entities_by_params(
-        entity_cls: SqlAlchemyEntity, params: Dict[str, Any], transaction: Transaction
+            entity_cls: SqlAlchemyEntity, params: Dict[str, Any], transaction: Transaction
     ):
         """
         根据输入的参数删除匹配的数据
@@ -378,7 +379,7 @@ class BasicRepository:
 
     @staticmethod
     def _check_entity_existed(
-        entity_cls: SqlAlchemyEntity, params: Dict[str, Any]
+            entity_cls: SqlAlchemyEntity, params: Dict[str, Any]
     ) -> bool:
         """
         根据传入条件判断对象是否存在
@@ -435,7 +436,7 @@ class BasicRepository:
 
     @staticmethod
     def __insert_entity_by_dict(
-        entity_cls: SqlAlchemyEntity, entity_data: Dict[str, Any]
+            entity_cls: SqlAlchemyEntity, entity_data: Dict[str, Any]
     ) -> str:
         """
         根据字典信息来插入数据库数据
@@ -453,9 +454,9 @@ class BasicRepository:
 
     @staticmethod
     def __insert_history_entity_by_dict(
-        original_entity_cls: SqlAlchemyEntity,
-        entity_data: Dict[str, Any],
-        transaction_id: str,
+            original_entity_cls: SqlAlchemyEntity,
+            entity_data: Dict[str, Any],
+            transaction_id: str,
     ):
         """
         插入历史数据
@@ -492,9 +493,9 @@ class BasicRepository:
 
     @staticmethod
     def __prepare_handler_info(
-        entity_column_name_list: List[str],
-        entity_data: Dict[str, Any],
-        transaction: Transaction,
+            entity_column_name_list: List[str],
+            entity_data: Dict[str, Any],
+            transaction: Transaction,
     ):
         """
         清除操作列数据并更新更系列
@@ -504,15 +505,15 @@ class BasicRepository:
         :return:None
         """
         if "handler_category" in entity_column_name_list and not entity_data.get(
-            "handler_category"
+                "handler_category"
         ):
             entity_data["handler_category"] = transaction.handler_category
         if "handler_id" in entity_column_name_list and not entity_data.get(
-            "handler_id"
+                "handler_id"
         ):
             entity_data["handler_id"] = transaction.handler_id
         if "handled_at" in entity_column_name_list and not entity_data.get(
-            "handled_at"
+                "handled_at"
         ):
             entity_data["handled_at"] = transaction.handled_at
 
@@ -529,7 +530,7 @@ class BasicRepository:
 
     @staticmethod
     def __prepare_new_entity_data(
-        entity_cls: SqlAlchemyEntity, entity_data: Dict[str, Any]
+            entity_cls: SqlAlchemyEntity, entity_data: Dict[str, Any]
     ) -> SqlAlchemyEntity:
         """
         准备实体数据
@@ -548,10 +549,10 @@ class BasicRepository:
 
     @staticmethod
     def __update_entity_by_dict(
-        entity_cls: SqlAlchemyEntity,
-        entity_data: Dict,
-        col_name_list: List[str],
-        is_version_controlled: bool,
+            entity_cls: SqlAlchemyEntity,
+            entity_data: Dict,
+            col_name_list: List[str],
+            is_version_controlled: bool,
     ) -> Dict[str, Any]:
         """
         根据字典信息来更新数据库数据
@@ -587,7 +588,7 @@ class BasicRepository:
 
     @staticmethod
     def __update_history_entity_record(
-        original_entity_cls: SqlAlchemyEntity, entity_data: Dict, transaction_id: str
+            original_entity_cls: SqlAlchemyEntity, entity_data: Dict, transaction_id: str
     ):
         """
         更新历史实体记录， 填入最新一条的end_at和end_transaction_id,并插入最新条
@@ -616,7 +617,7 @@ class BasicRepository:
 
     @staticmethod
     def __update_history_entity_by_dict(
-        history_cls: SqlAlchemyEntity, entity_data: Dict
+            history_cls: SqlAlchemyEntity, entity_data: Dict
     ) -> Dict[str, Any]:
         """
         根据字典信息来更新数据库数据
@@ -648,7 +649,7 @@ class BasicRepository:
 
     @staticmethod
     def __prepare_entity_updated_col(
-        entity_cls: SqlAlchemyEntity, col_list: List = None
+            entity_cls: SqlAlchemyEntity, col_list: List = None
     ) -> List[str]:
         """
         准备更新实体的列名集合
@@ -708,7 +709,7 @@ class BasicRepository:
 
     @staticmethod
     def _build_sqlalchemy_query(
-        entity_cls: SqlAlchemyEntity, params: Dict[str, Any] = None
+            entity_cls: SqlAlchemyEntity, params: Dict[str, Any] = None
     ) -> Query:
         """
         根据输入的数据库类及查询条件构建查询
@@ -736,8 +737,9 @@ class BasicRepository:
         """
         table_name = BasicRepository.__get_entity_table_name(entity_cls=entity_cls)
         sql = f"""select * from {table_name} where 1=1 """
-        for key in params.keys():
-            sql += f""" and {key} = :{key}"""
+        for key, value in params.items():
+            key_method = f'any(array[:{key}])' if is_simple_iterable(value) else f':{key}'
+            sql += f""" and {key} = {key_method}"""
         return sql
 
     @staticmethod
@@ -762,7 +764,7 @@ class BasicRepository:
 
     @staticmethod
     def _fetch_page(
-        sql: str, page_size: int, page_index: int, params: Dict[str, Any] = None
+            sql: str, page_size: int, page_index: int, params: Dict[str, Any] = None
     ) -> List[Dict[str, Any]]:
         """
         获取对应sql和参数的对应分页的数据
@@ -790,16 +792,16 @@ class BasicRepository:
     def _get_entity_cls_(cls):
         if cls.__entity_cls__ is not None:
             return cls.__entity_cls__
-        raise ClassConfigNotSetError(cls, "__entity_cls__")
+        raise ClassConfigNotSetError(cls, '__entity_cls__')
 
     @classmethod
     def _get_model_cls_(cls):
         if cls.__model_cls__ is not None:
             return cls.__model_cls__
-        raise ClassConfigNotSetError(cls, "__model_cls__")
+        raise ClassConfigNotSetError(cls, '__model_cls__')
 
     @classmethod
-    def get_first_entity_by_params(cls, params):
+    def get_first_entity_by_params(cls, params) -> Optional[ModelClassType]:
         return cls._get_model_by_params(
             entity_cls=cls._get_entity_cls_(),
             model_cls=cls._get_model_cls_(),
@@ -807,7 +809,15 @@ class BasicRepository:
         )
 
     @classmethod
-    def check_entity_exist(cls, params):
+    def get_all_entity_by_params(cls, **params) -> List[ModelClassType]:
+        return cls._get_model_list_by_params(
+            entity_cls=cls._get_entity_cls_(),
+            model_cls=cls._get_model_cls_(),
+            params=params,
+        )
+
+    @classmethod
+    def check_entity_exist(cls, **params) -> bool:
         return cls._check_entity_existed(
             entity_cls=cls._get_entity_cls_(),
             params=params,
@@ -830,15 +840,17 @@ class BasicRepository:
             entity_cls=cls._get_entity_cls_(),
             data=data,
             transaction=transaction,
-            col_list=col_list,
+            col_list=col_list
         )
 
     @classmethod
-    def fetch_by_id(cls, entity_id):
+    def fetch_by_id(cls, entity_id: object) -> Optional[ModelClassType]:
         return cls._get_model_by_params(
             entity_cls=cls._get_entity_cls_(),
             model_cls=cls._get_model_cls_(),
-            params={"id": entity_id},
+            params={
+                "id": entity_id
+            },
         )
 
     @classmethod
@@ -903,13 +915,13 @@ class PaginationQueryBuilder(BasicRepository):
             self._query_para = {}
 
     def get_query_result(
-        self,
-        page_size: int,
-        page_index: int,
-        search_text: str = "",
-        filter_option: Dict[str, Union[None, str, List[str]]] = None,
-        draw: int = 1,
-        extra_para_list: List[QueryCondition] = None,
+            self,
+            page_size: int,
+            page_index: int,
+            search_text: str = "",
+            filter_option: Dict[str, Union[None, str, List[str]]] = None,
+            draw: int = 1,
+            extra_para_list: List[QueryCondition] = None,
     ) -> PaginationCarrier[GenericData]:
 
         """
@@ -924,7 +936,7 @@ class PaginationQueryBuilder(BasicRepository):
         """
 
         def __build_query_conditions(
-            query_filter_list: List[QueryCondition] = None,
+                query_filter_list: List[QueryCondition] = None,
         ) -> Tuple[str, Dict[str, Any]]:
             """
             根据query filter列表构建对应的sql和参数列表
@@ -962,8 +974,8 @@ class PaginationQueryBuilder(BasicRepository):
         )
 
     def _build_search_condition(
-        self,
-        search_segment: List[str],
+            self,
+            search_segment: List[str],
     ) -> Tuple[str, Dict[str, Any]]:
         """
         根据检索字符串及参数字典构造过滤条件
@@ -991,18 +1003,15 @@ class PaginationQueryBuilder(BasicRepository):
         return attach_segment, filter_para
 
     def _build_filter_condition(
-        self, filter_options: Dict[str, Union[None, str, List[str]]]
+            self, filter_options: Dict[str, Union[None, str, List[str]]] = None
     ) -> Tuple[str, Dict[str, Any]]:
-        if self._filter_columns is None:
+        if self._filter_columns is None or filter_options is None:
             return "", {}
 
         filter_para = {}
         attach_segment = ""
         for column_name in self._filter_columns:
-            if (
-                column_name in filter_options.keys()
-                and filter_options[column_name] is not None
-            ):
+            if column_name in filter_options.keys() and filter_options[column_name] is not None:
                 value = filter_options[column_name]
                 filter_para_name = "filter_value_{0}".format(column_name)
                 if isinstance(value, str):
@@ -1029,7 +1038,7 @@ class PaginationQueryBuilder(BasicRepository):
         return self._fetch_count(sql_filter_count, execute_para_dict)
 
     def _query_filter_data(
-        self, page_size: int, page_index: int, sql_segment: str, params: Dict[str, Any]
+            self, page_size: int, page_index: int, sql_segment: str, params: Dict[str, Any]
     ) -> List[GenericData]:
         sql_filter_data = """select * from ({0}) pqb where 1=1 {1} {2} {3}""".format(
             self._sql,

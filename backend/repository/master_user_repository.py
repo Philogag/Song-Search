@@ -23,9 +23,8 @@ class MasterUserRepository(BasicRepository):
     @classmethod
     def get_user_info(cls, user_id: str) -> Optional[MasterUserInfoVm]:
         sql = """
-        select smu.*, uom.organization_id
+        select smu.*
         from st_master_user smu
-        left join user_organization_map uom on uom.user_id = smu.id
         where smu.id = :user_id
         """
         return cls._fetch_first(
