@@ -15,9 +15,7 @@
   import { BasicForm, useForm } from '/@/components/Form';
   import { BasicDrawer, useDrawerInner } from '/@/components/Drawer';
   import { useMessage } from '/@/hooks/web/useMessage';
-  import { formSchema } from './team.data';
-  import {apiCreateOrUpdateSportMeetingCompetitionItem} from "/@/api/data-view/sport-meeting-competition";
-  import {apiCreateOrUpdateTeamItem} from "/@/api/data-view/team";
+  // import { formSchema } from './table-struct';
   export default defineComponent({
     name: 'Editor',
     components: { BasicDrawer, BasicForm },
@@ -27,7 +25,7 @@
       const isUpdate = ref(true);
       const [registerForm, { resetFields, setFieldsValue, validate }] = useForm({
         labelWidth: 140,
-        schemas: formSchema,
+        schemas: [], // formSchema,
         showActionButtonGroup: false,
         baseColProps: { lg: 12, md: 24 },
       });
@@ -48,17 +46,17 @@
         try {
           const values = await validate();
           setDrawerProps({ confirmLoading: true });
-          apiCreateOrUpdateTeamItem(values).then(res => {
-            if (res.message.length == 0){
-              closeDrawer();
-              emit('success');
-            } else {
-              notification.error({
-                message: '错误',
-                description: res.message.join("\n"),
-              });
-            }
-          })
+          // apiCreateOrUpdateTeamItem(values).then(res => {
+          //   if (res.message.length == 0){
+          //     closeDrawer();
+          //     emit('success');
+          //   } else {
+          //     notification.error({
+          //       message: '错误',
+          //       description: res.message.join("\n"),
+          //     });
+          //   }
+          // })
         } finally {
           setDrawerProps({ confirmLoading: false });
         }

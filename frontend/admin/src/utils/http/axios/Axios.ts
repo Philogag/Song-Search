@@ -126,7 +126,7 @@ export class VAxios {
     const { requestOptions } = this.options;
     const opt: RequestOptions = Object.assign({}, requestOptions);
 
-    const { urlPrefixBuildHook } = transform || {};
+    const { urlPrefixBuildHook, requestCatchHook, transformRequestHook } = transform || {};
     if (urlPrefixBuildHook && isFunction(urlPrefixBuildHook)) {
       conf = urlPrefixBuildHook(conf, opt);
     }
@@ -154,15 +154,40 @@ export class VAxios {
       });
     }
 
-    return this.axiosInstance.request<T>({
-      ...conf,
-      method: 'POST',
-      data: formData,
-      headers: {
-        'Content-type': ContentTypeEnum.FORM_DATA,
-        // @ts-ignore
-        ignoreCancelToken: true,
-      },
+    return new Promise((resolve, reject) => {
+      this.axiosInstance
+        .request<T>({
+          ...conf,
+          method: 'POST',
+          data: formData,
+          headers: {
+            'Content-type': ContentTypeEnum.FORM_DATA,
+            // @ts-ignore
+            ignoreCancelToken: true,
+          },
+        })
+        .then((res: AxiosResponse<Result>) => {
+          if (transformRequestHook && isFunction(transformRequestHook)) {
+            try {
+              const ret = transformRequestHook(res, opt);
+              resolve(ret);
+            } catch (err) {
+              reject(err || new Error('request error!'));
+            }
+            return;
+          }
+          resolve(res as unknown as Promise<T>);
+        })
+        .catch((e: Error | AxiosError) => {
+          if (requestCatchHook && isFunction(requestCatchHook)) {
+            reject(requestCatchHook(e, opt));
+            return;
+          }
+          if (axios.isAxiosError(e)) {
+            // rewrite error message from axios in here
+          }
+          reject(e);
+        });
     });
   }
 

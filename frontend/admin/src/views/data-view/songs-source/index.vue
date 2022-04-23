@@ -11,15 +11,13 @@
         />
       </template>
       <template #toolbar>
-        <a-button type="primary" @click="handleCreate"> 新建代表队 </a-button>
+        <Upload :showUploadList="false" :multiple="false" :customRequest="handleImport">
+          <a-button type="primary" preIcon="clarity:import-solid">导入</a-button>
+        </Upload>
       </template>
       <template #action="{ record }">
         <TableAction
           :actions="[
-            {
-              icon: 'clarity:note-edit-line',
-              onClick: handleEdit.bind(null, record),
-            },
             {
               icon: 'ant-design:delete-outlined',
               color: 'error',
@@ -33,46 +31,40 @@
         />
       </template>
     </BasicTable>
-    <Editor @register="registerDrawer" @success="handleSuccess" />
   </PageWrapper>
 </template>
 <script lang="ts">
   import { defineComponent, reactive } from 'vue';
-  import { InputSearch } from 'ant-design-vue';
+  import { InputSearch, message, Upload } from 'ant-design-vue';
   import { BasicTable, useTable, TableAction } from '/@/components/Table';
-  import { useDrawer } from '/@/components/Drawer';
   import { PageWrapper } from '/@/components/Page';
-  import Editor from './Editor.vue';
   import { columns } from './table-struct';
+  import { apiGetSongsSourcePage, apiImportSongsSource } from '/@/api/data-view/songs-source';
   export default defineComponent({
     name: 'AthletesLevelManagement',
     components: {
       PageWrapper,
       BasicTable,
-      Editor,
       TableAction,
       InputSearch,
+      Upload,
     },
     setup() {
       const params = reactive({
         searchText: '',
       });
 
-      const [registerDrawer, { openDrawer }] = useDrawer();
       const [registerTable, { reload }] = useTable({
         api: async (pageParams) => {
-          // const res = await apiGetTeamPage({
-          //   pageIndex: pageParams.pageSize * (pageParams.page - 1),
-          //   pageSize: pageParams.pageSize,
-          //   searchText: params.searchText ? params.searchText : undefined,
-          //   filterColumns: {
-          //     sportMeetingId: pageParams.sportMeetingId ? [pageParams.sportMeetingId] : null,
-          //   },
-          // });
-          // return {
-          //   items: res.data,
-          //   total: res.filterCount,
-          // };
+          const res = await apiGetSongsSourcePage({
+            pageIndex: pageParams.pageSize * (pageParams.page - 1),
+            pageSize: pageParams.pageSize,
+            searchText: params.searchText ? params.searchText : undefined,
+          });
+          return {
+            items: res.data,
+            total: res.filterCount,
+          };
         },
         columns: columns(),
         isTreeTable: false,
@@ -82,38 +74,29 @@
         bordered: true,
         showIndexColumn: false,
         canResize: false,
-        actionColumn: {
-          width: 120,
-          title: '操作',
-          dataIndex: 'action',
-          slots: { customRender: 'action' },
-          fixed: undefined,
-        },
+        // actionColumn: {
+        //   width: 120,
+        //   title: '操作',
+        //   dataIndex: 'action',
+        //   slots: { customRender: 'action' },
+        //   fixed: undefined,
+        // },
         useSearchForm: false,
         // formConfig: {
         //   labelWidth: 120,
-        //   schemas: searchFormSchema(searchFormSettings.defaultValue, searchFormSettings.permission),
+        //   schemas: searchFormSchema(),
         //   showResetButton: false,
         // },
       });
-      function handleCreate() {
-        openDrawer(true, {
-          isUpdate: false,
+      function handleImport({ file }) {
+        console.log(file);
+        apiImportSongsSource({
+          filename: file.name,
+          file: file,
+        }).then(() => {
+          message.success('导入成功');
+          reload();
         });
-      }
-      function handleEdit(record: Recordable) {
-        openDrawer(true, {
-          record,
-          isUpdate: true,
-        });
-      }
-      function handleDelete(record: Recordable) {
-        // apiDeleteTeamItem(record.id).then((res) => {
-        //   if (res.code == 200) {
-        //     // console.log("Delete athletes-level: " + record.id);
-        //     reload();
-        //   }
-        // });
       }
       function handleSuccess() {
         reload();
@@ -125,10 +108,7 @@
       return {
         params,
         registerTable,
-        registerDrawer,
-        handleCreate,
-        handleEdit,
-        handleDelete,
+        handleImport,
         handleSuccess,
         onSearch,
       };
