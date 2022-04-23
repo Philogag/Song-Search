@@ -15,6 +15,7 @@ export abstract class AxiosTransform {
    * @description: Process configuration before request
    * @description: Process configuration before request
    */
+  urlPrefixBuildHook?: (config: AxiosRequestConfig, options: RequestOptions) => AxiosRequestConfig;
   beforeRequestHook?: (config: AxiosRequestConfig, options: RequestOptions) => AxiosRequestConfig;
 
   /**

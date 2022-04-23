@@ -16,11 +16,12 @@ import { useErrorLogStoreWithOut } from '/@/store/modules/errorLog';
 import { useI18n } from '/@/hooks/web/useI18n';
 import { joinTimestamp, formatRequestDate } from './helper';
 import { useUserStoreWithOut } from '/@/store/modules/user';
-import {convert_camel_to_underline, convertCamelToUnderline} from "/@/api/convert";
+import { convertCamelToUnderline } from '/@/api/convert';
+import { createVNode } from 'vue';
 
 const globSetting = useGlobSetting();
 const urlPrefix = globSetting.urlPrefix;
-const { createMessage, createErrorModal } = useMessage();
+const { createMessage, createErrorModal, notification } = useMessage();
 
 /**
  * @description: 数据处理，方便区分多种处理方式
@@ -54,6 +55,14 @@ const transform: AxiosTransform = {
     // 这里逻辑可以根据项目进行修改
     const hasSuccess = data && Reflect.has(data, 'code') && code === ResultEnum.SUCCESS;
     if (hasSuccess) {
+      // console.log(message);
+      if (message && message.length > 0) {
+        notification.error({
+          message: '操作失败!',
+          description: createVNode('div', { style: 'white-space: pre-wrap' }, message.join(`\n`)),
+        });
+        throw new Error(message.join(`;`) || t('sys.api.apiRequestFailed'));
+      }
       return result;
     }
 
@@ -69,7 +78,7 @@ const transform: AxiosTransform = {
         break;
       default:
         if (message) {
-          timeoutMsg = message.join(";");
+          timeoutMsg = message.join(';');
         }
     }
 
@@ -84,10 +93,9 @@ const transform: AxiosTransform = {
     throw new Error(timeoutMsg || t('sys.api.apiRequestFailed'));
   },
 
-  // 请求之前处理config
-  beforeRequestHook: (config, options) => {
-    const { apiUrl, joinPrefix, joinParamsToUrl, formatDate, joinTime = true, urlPrefix } = options;
-
+  // Url前缀构建
+  urlPrefixBuildHook: (config, options) => {
+    const { apiUrl, joinPrefix, urlPrefix } = options;
     if (joinPrefix) {
       config.url = `${urlPrefix}${config.url}`;
     }
@@ -95,6 +103,13 @@ const transform: AxiosTransform = {
     if (apiUrl && isString(apiUrl)) {
       config.url = `${apiUrl}${config.url}`;
     }
+    return config;
+  },
+
+  // 请求之前处理config
+  beforeRequestHook: (config, options) => {
+    const { joinParamsToUrl, formatDate, joinTime = true } = options;
+
     let params = config.params;
     let data = config.data || false;
     formatDate && data && !isString(data) && formatRequestDate(data);

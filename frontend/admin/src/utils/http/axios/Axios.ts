@@ -121,6 +121,16 @@ export class VAxios {
    * @description:  File Upload
    */
   uploadFile<T = any>(config: AxiosRequestConfig, params: UploadFileParams) {
+    let conf: CreateAxiosOptions = cloneDeep(config);
+    const transform = this.getTransform();
+    const { requestOptions } = this.options;
+    const opt: RequestOptions = Object.assign({}, requestOptions);
+
+    const { urlPrefixBuildHook } = transform || {};
+    if (urlPrefixBuildHook && isFunction(urlPrefixBuildHook)) {
+      conf = urlPrefixBuildHook(conf, opt);
+    }
+
     const formData = new window.FormData();
     const customFilename = params.name || 'file';
 
@@ -145,7 +155,7 @@ export class VAxios {
     }
 
     return this.axiosInstance.request<T>({
-      ...config,
+      ...conf,
       method: 'POST',
       data: formData,
       headers: {
@@ -199,7 +209,11 @@ export class VAxios {
 
     const opt: RequestOptions = Object.assign({}, requestOptions, options);
 
-    const { beforeRequestHook, requestCatchHook, transformRequestHook } = transform || {};
+    const { urlPrefixBuildHook, beforeRequestHook, requestCatchHook, transformRequestHook } =
+      transform || {};
+    if (urlPrefixBuildHook && isFunction(urlPrefixBuildHook)) {
+      conf = urlPrefixBuildHook(conf, opt);
+    }
     if (beforeRequestHook && isFunction(beforeRequestHook)) {
       conf = beforeRequestHook(conf, opt);
     }
