@@ -60,11 +60,8 @@ class MasterUserRepository(BasicRepository):
     ) -> PaginationCarrier[MasterUserListVm]:
         sql = """
         select smu.*, 
-        smo.id as organization_id, smo.name as organization_name, 
         role.role_list 
         from st_master_user smu
-        left join  user_organization_map uom on uom.user_id=smu.id
-        left join st_master_organization smo on smo.id=uom.organization_id
         left join (
             select urm.user_id, json_agg(json_build_object(
                 'id', sr.id,

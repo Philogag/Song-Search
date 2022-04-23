@@ -1,6 +1,6 @@
 import { BasicColumn } from '/@/components/Table';
 import { FormSchema } from '/@/components/Table';
-import {apiGetRoleList} from "/@/api/system-config/role";
+import { apiGetRoleList } from '/@/api/system-config/role';
 
 export const columns: BasicColumn[] = [
   {
@@ -20,10 +20,10 @@ export const columns: BasicColumn[] = [
     dataIndex: 'roles',
     customRender: ({ record }) => {
       return record.roleList.map((role) => role.roleName).join(' | ');
-    }
+    },
   },
   {
-    title: '登录记录',
+    title: '最后登录',
     dataIndex: 'lastLoginAt',
     width: 240,
   },
@@ -66,14 +66,14 @@ export const formSchema: FormSchema[] = [
     label: '用户名',
     component: 'Input',
     required: true,
-    componentProps: { placeholder: "请输入用户名" },
+    componentProps: { placeholder: '请输入用户名' },
     colProps: { lg: 24, md: 24 },
   },
   {
     field: 'nickName',
     label: '昵称',
     component: 'Input',
-    componentProps: { placeholder: "请输入昵称" },
+    componentProps: { placeholder: '请输入昵称' },
     colProps: { lg: 24, md: 24 },
   },
   {
@@ -81,14 +81,14 @@ export const formSchema: FormSchema[] = [
     label: '重置密码',
     component: 'InputPassword',
     componentProps: {
-      placeholder: "留空则不变"
+      placeholder: '留空则不变',
     },
     colProps: { lg: 12, md: 24 },
   },
   {
     field: 'newPasswordConfirm',
     label: '确认密码',
-    componentProps: { placeholder: "请重复密码" },
+    componentProps: { placeholder: '请重复密码' },
     component: 'InputPassword',
     colProps: { lg: 12, md: 24 },
   },
@@ -120,8 +120,8 @@ export const formSchema: FormSchema[] = [
       api: apiGetRoleList,
       labelField: 'roleName',
       valueField: 'id',
-      mode: "multiple",
+      mode: 'multiple',
     },
     colProps: { lg: 24, md: 24 },
-  }
+  },
 ];
