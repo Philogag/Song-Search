@@ -8,7 +8,10 @@ from numpy import dot, array
 from gensim import matutils
 from pymilvus import FieldSchema, DataType
 
-from backend.algorithm.utility import get_or_create_model_meta, get_train_data_by_last_trained_at, uuid_to_double_int64
+from backend.algorithm.utility import (
+    get_or_create_model_meta,
+    get_train_data, finish_message
+)
 from backend.factory import message_queue
 from backend.repository.basic_milvus_repository import MilvusCollectionOrm
 from backend.utility.singleton_helper import singleton_class
@@ -60,13 +63,12 @@ class SongsVectorCollection(MilvusCollectionOrm):
     fields = [
         FieldSchema(name="id", dtype=DataType.INT64, is_primary=True, auto_id=True),
         FieldSchema(name="model_id", dtype=DataType.INT64),
-        FieldSchema(name="uuid_p1", dtype=DataType.INT64),
-        FieldSchema(name="uuid_p2", dtype=DataType.INT64),
+        FieldSchema(name="song_id", dtype=DataType.INT64),
         FieldSchema(name="vector", dtype=DataType.FLOAT_VECTOR, dim=100)
     ]
     index = {
         "vector": {
-            "metric_type": "IP",  # 距离计算：内积
+            "metric_type": "IP",  # 距离计算：内积(标准化余弦)
             "index_type": "FLAT",  # 加速矢量搜索的索引类型
         }
     }
@@ -84,29 +86,51 @@ class SongsVectorCollection(MilvusCollectionOrm):
         })
 
 
-@message_queue.data_unpacker()
-def prepare_vector_set():
+def data_to_vector_set(force_all=False):
     """准备数据集"""
     global model_meta
     model_meta = get_or_create_model_meta(model_id=model_meta.model_id)
-    data_rows = get_train_data_by_last_trained_at(model_meta)
-    logging.info("Train data len: %d"%len(data_rows))
+    data_rows = get_train_data(model_meta, force_all)
+    logging.info("Train data len: %d" % len(data_rows))
     for data in data_rows:
         sentences = sentences_to_words(data.content)
         vector = words_to_vector(sentences)
         SongsVectorCollection().insert([
             model_meta.model_id,
-            *uuid_to_double_int64(data.id),
+            data.int_id,
             vector,
         ])
         # print(data.title)
     SongsVectorCollection().commit()
-    print("Done.")
+    logging.info("Done.")
+    return len(data_rows)
 
 
 @message_queue.data_unpacker()
-def search_text(search_text: str):
+def reset_vector_set(message_id: str):
+    logging.info("Reset model vector set.")
+    SongsVectorCollection().reset_collection()
+    data_size = data_to_vector_set(force_all=True)
+    finish_message(
+        message_id,
+        content="模型重置完成，预处理数据 %d 条。" % data_size
+    )
+
+
+@message_queue.data_unpacker()
+def append_vector_set(message_id: str):
+    logging.info("Additional training model vector set.")
+    data_size = data_to_vector_set(force_all=False)
+    finish_message(
+        message_id,
+        content="模型训练完成，预处理数据 %d 条。" % data_size
+    )
+
+
+@message_queue.data_unpacker()
+def search_text(search_id: str, search_text: str):
     """搜索"""
+    logging.info(f'Search {search_id} for: {search_text}')
     words = sentences_to_words(search_text)
     vector = words_to_vector(words)
 
@@ -115,11 +139,11 @@ def search_text(search_text: str):
         data=vector,
         limit=20,
     )
-    print(results)
     return
 
 
 message_queue_register = [
-    message_queue.register_listener(channel='jiayan+word2vec+cos', method='train', callback=prepare_vector_set),
+    message_queue.register_listener(channel='jiayan+word2vec+cos', method='reset', callback=reset_vector_set),
+    message_queue.register_listener(channel='jiayan+word2vec+cos', method='train', callback=append_vector_set),
     message_queue.register_listener(channel='jiayan+word2vec+cos', method='search', callback=search_text)
 ]

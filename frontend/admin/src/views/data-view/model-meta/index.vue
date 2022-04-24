@@ -16,17 +16,17 @@
           :actions="[
             {
               icon: 'codicon:run-all',
-              onClick: handleRunTrain.bind(null, record.id),
+              onClick: handleTrainModel.bind(null, record.id),
             },
-            // {
-            //   icon: 'ant-design:delete-outlined',
-            //   color: 'error',
-            //   popConfirm: {
-            //     title: '是否确认删除',
-            //     confirm: handleDelete.bind(null, record),
-            //     placement: 'topRight',
-            //   },
-            // },
+            {
+              icon: 'bx:reset',
+              color: 'error',
+              popConfirm: {
+                title: '是否确认重置模型向量库',
+                confirm: handleResetModel.bind(null, record.id),
+                placement: 'topRight',
+              },
+            },
           ]"
         />
       </template>
@@ -39,7 +39,7 @@
   import { BasicTable, useTable, TableAction } from '/@/components/Table';
   import { PageWrapper } from '/@/components/Page';
   import { columns } from './table-struct';
-  import { apiGetModelMetaPage } from '/@/api/data-view/model-meta';
+  import { apiGetModelMetaPage, apiTrainModel } from '/@/api/data-view/model-meta';
   export default defineComponent({
     name: 'AthletesLevelManagement',
     components: {
@@ -87,8 +87,15 @@
         //   showResetButton: false,
         // },
       });
-      function handleRunTrain(id: string) {
-        console.log(id);
+      function handleTrainModel(id: string) {
+        apiTrainModel(id, false).then(() => {
+          message.info('模型后台训练中...');
+        });
+      }
+      function handleResetModel(id: string) {
+        apiTrainModel(id, true).then(() => {
+          message.info('模型后台训练中...');
+        });
       }
       function handleSuccess() {
         reload();
@@ -100,7 +107,8 @@
       return {
         params,
         registerTable,
-        handleRunTrain,
+        handleTrainModel,
+        handleResetModel,
         handleSuccess,
         onSearch,
       };

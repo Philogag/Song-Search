@@ -4,9 +4,11 @@ from typing import List
 import pymilvus
 from datetime import datetime
 
-from backend.data.system_enum import EnumRobotCode
+from backend.data.system_enum import EnumRobotCode, EnumMessageStatus
 from backend.data.unit_of_work import SqlAlchemyUOW
+from backend.model.edit.message_em import MessageEm
 from backend.model.edit.model_meta_em import ModelMetaEm
+from backend.repository.message_repository import MessageRepository
 from backend.repository.model_meta_repository import ModelMetaRepository
 from backend.repository.robot_repository import RobotRepository
 from backend.repository.songs_source_repository import SongsSourceRepository
@@ -50,9 +52,11 @@ def get_or_create_model_meta(model_id: int, model_name: str = None):
         )
 
 
-def get_train_data_by_last_trained_at(model_em: ModelMetaEm):
-    # data = SongsSourceRepository.fetch_create_after_time(model_em.last_train_at)
-    data = SongsSourceRepository.fetch_create_after_time()
+def get_train_data(model_em: ModelMetaEm, force_all=False):
+    if not force_all and model_em.last_train_at is not None:
+        data = SongsSourceRepository.fetch_create_after_time(model_em.last_train_at)
+    else:
+        data = SongsSourceRepository.fetch_create_after_time()
     model_em.last_train_at = datetime.now()
     with SqlAlchemyUOW(
         handler=get_system_message_queue_robot(),
@@ -62,3 +66,20 @@ def get_train_data_by_last_trained_at(model_em: ModelMetaEm):
         ModelMetaRepository.update_entity(model_em, transaction=uow.transaction, col_list=["last_train_at"])
     return data
 
+
+def finish_message(message_id: str, title: str = None, content: str = None, success: bool = True):
+    message_em: MessageEm = MessageRepository.fetch_by_id(message_id)
+
+    message_em.checked = False
+    message_em.status = EnumMessageStatus.success.name if success else EnumMessageStatus.failed.name
+    if title:
+        message_em.title = title
+    if content:
+        message_em.content = content
+
+    with SqlAlchemyUOW(
+        handler=get_system_message_queue_robot(),
+        action="update-message",
+        action_params=message_em.dict(),
+    ) as uow:
+        MessageRepository.update_entity(message_em, transaction=uow.transaction)

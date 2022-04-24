@@ -5,56 +5,79 @@
         <BellOutlined />
       </Badge>
       <template #content>
-        <Tabs>
-          <template v-for="item in listData" :key="item.key">
-            <TabPane>
-              <template #tab>
-                {{ item.name }}
-                <span v-if="item.list.length !== 0">({{ item.list.length }})</span>
-              </template>
-              <!-- 绑定title-click事件的通知列表中标题是“可点击”的-->
-              <NoticeList :list="item.list" v-if="item.key === '1'" @title-click="onNoticeClick" />
-              <NoticeList :list="item.list" v-else />
-            </TabPane>
-          </template>
-        </Tabs>
+        <NoticeList :list="messageList" v-if="!messageList.checked" @title-click="onNoticeClick" />
       </template>
     </Popover>
   </div>
 </template>
 <script lang="ts">
-  import { computed, defineComponent, ref } from 'vue';
-  import { Popover, Tabs, Badge } from 'ant-design-vue';
+  import { computed, defineComponent, onMounted, onUnmounted, ref } from 'vue';
+  import { Popover, Badge } from 'ant-design-vue';
   import { BellOutlined } from '@ant-design/icons-vue';
-  import { tabListData, ListItem } from './data';
+  import { ListItem } from './data';
   import NoticeList from './NoticeList.vue';
   import { useDesign } from '/@/hooks/web/useDesign';
   import { useMessage } from '/@/hooks/web/useMessage';
+  import polling from '/@/api/polling';
+  import { apiCheckNewMessages, apiSetMessageChecked } from '/@/api/sys/message';
+  import moment from "moment";
 
   export default defineComponent({
-    components: { Popover, BellOutlined, Tabs, TabPane: Tabs.TabPane, Badge, NoticeList },
-    setup() {
+    components: { Popover, BellOutlined, Badge, NoticeList },
+    setup(_, { emit }) {
       const { prefixCls } = useDesign('header-notify');
       const { createMessage } = useMessage();
-      const listData = ref(tabListData);
+      const pollingCallExit = ref(false);
+      const messageList = ref([]);
+      const lastMessageAt = ref<Nullable<String>>(undefined);
 
       const count = computed(() => {
-        let count = 0;
-        for (let i = 0; i < tabListData.length; i++) {
-          count += tabListData[i].list.length;
-        }
-        return count;
+        return messageList.value.length;
       });
 
       function onNoticeClick(record: ListItem) {
-        createMessage.success('你点击了通知，ID=' + record.id);
-        // 可以直接将其标记为已读（为标题添加删除线）,此处演示的代码会切换删除线状态
-        record.titleDelete = !record.titleDelete;
+        apiSetMessageChecked(record.id).then(() => {
+          record.titleDelete = !record.titleDelete;
+        });
       }
+
+      async function requestResultHandler(data) {
+        messageList.value.length = 0;
+        data.forEach((item) => {
+          messageList.value.unshift({
+            id: item.id,
+            title: item.title,
+            description: item.content,
+            checked: item.checked,
+            avatar: item.status === 'success' ? '' : '',
+          });
+        });
+        lastMessageAt.value = Math.max(
+          lastMessageAt.value,
+          ...data.map((item) => item.handledAt),
+        );
+        console.log(lastMessageAt.value);
+      }
+
+      onMounted(() => {
+        pollingCallExit.value = false;
+        polling(
+          () =>
+            apiCheckNewMessages({
+              after: lastMessageAt.value,
+            }),
+          30 * 1000, // 30s
+          () => pollingCallExit.value,
+          requestResultHandler,
+        );
+      });
+      onUnmounted(() => {
+        pollingCallExit.value = true;
+      });
 
       return {
         prefixCls,
-        listData,
+        messageList,
         count,
         onNoticeClick,
         numberStyle: {},
@@ -69,7 +92,7 @@
     padding-top: 2px;
 
     &__overlay {
-      max-width: 360px;
+      width: 360px;
     }
 
     .ant-tabs-content {

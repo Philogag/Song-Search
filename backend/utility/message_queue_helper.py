@@ -42,9 +42,9 @@ class MessageQueue:
         def __actual_data_unpacker(func: Callable):
             @wraps(func)
             def wrapper(ch, method, properties, body):
-                # print(ch, method, properties, body)
                 try:
                     data = json.loads(body.decode())
+                    logging.info(f'Message data: {data}')
                     if isinstance(data, dict):
                         func(**data)
                     else:
