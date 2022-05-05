@@ -65,7 +65,7 @@ def get_current_user_id():
     if payload is not None:
         return payload["user_id"]
     else:
-        return None
+        raise BusinessError('user not login.')
 
 
 def get_current_user_handler():

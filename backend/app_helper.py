@@ -1,6 +1,7 @@
 import logging
 import os
 import traceback
+import time
 from logging.config import fileConfig
 from typing import Optional
 
@@ -80,6 +81,7 @@ def init_logger(logger_config_file):
     if not os.path.exists("log"):
         os.mkdir("log")
     fileConfig(logger_config_file)
+    logging.Formatter.converter = time.localtime # 使用系统时区
     logger = logging.getLogger()
 
     logger.info("Logger init successfully.")
@@ -93,15 +95,14 @@ def _check_route_authorization():
 
     route_permission_map = get_route_permission_map()
     route_permission = route_permission_map[request_url]
+    if not route_permission["need_login"]:
+        return
+    if route_permission["allow_all"]:
+        return
 
     has_authorization = request.headers.get("Authorization")
     if route_permission["need_login"] or has_authorization:
         verify_jwt_in_request()
-    if not route_permission["need_login"]:
-        return
-
-    if route_permission["allow_all"]:
-        return
 
     current_user_id = get_current_user_id()
     current_role = get_user_current_role(current_user_id)

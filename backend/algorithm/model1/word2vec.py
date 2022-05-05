@@ -10,7 +10,9 @@ from pymilvus import FieldSchema, DataType
 
 from backend.algorithm.utility import (
     get_or_create_model_meta,
-    get_train_data, finish_message
+    get_train_data,
+    finish_message,
+    append_search_result,
 )
 from backend.factory import message_queue
 from backend.repository.basic_milvus_repository import MilvusCollectionOrm
@@ -68,22 +70,29 @@ class SongsVectorCollection(MilvusCollectionOrm):
     ]
     index = {
         "vector": {
+            "index_type": "IVF_FLAT",  # 加速矢量搜索的索引类型
             "metric_type": "IP",  # 距离计算：内积(标准化余弦)
-            "index_type": "FLAT",  # 加速矢量搜索的索引类型
+            "params": {
+                "nlist": 1024,
+            }
         }
     }
     __auto_field_count__ = 1
 
     def search(self, model_id, data, limit: int = 20):
-        return self._search({
-            "data": data,
-            "anns_field": "vector",
-            "expr": "model_id == %d"%model_id,
-            "limit": limit,
-            "output_fields": ['model_id', 'uuid_p1', 'uuid_p2'],
-            "round_decimal": 3,
-            "consistency_level": "Strong",
-        })
+        return self._search(
+            search_params={
+                "data": [data],
+                "anns_field": "vector",
+                "param": {"metric_type": "IP", "params": {"nprobe": 10}},
+                "expr": "model_id == %d" % model_id,
+                "limit": limit,
+                "round_decimal": 3,
+                "consistency_level": "Strong",
+            },
+            id_field='id',
+            output_fields=["song_id"],
+        )[0]
 
 
 def data_to_vector_set(force_all=False):
@@ -130,16 +139,18 @@ def append_vector_set(message_id: str):
 @message_queue.data_unpacker()
 def search_text(search_id: str, search_text: str):
     """搜索"""
-    logging.info(f'Search {search_id} for: {search_text}')
+    global model_meta
+    # logging.info(f'Search {search_id} for: {search_text}')
     words = sentences_to_words(search_text)
     vector = words_to_vector(words)
 
     results = SongsVectorCollection().search(
         model_id=model_meta.model_id,
         data=vector,
-        limit=20,
+        limit=5,
     )
-    return
+    append_search_result(search_id, model_meta.id, results)
+    logging.info("Done.")
 
 
 message_queue_register = [

@@ -4,14 +4,18 @@ from typing import List
 import pymilvus
 from datetime import datetime
 
-from backend.data.system_enum import EnumRobotCode, EnumMessageStatus
+from backend.data.system_enum import EnumRobotCode, EnumMessageStatus, EnumSearchLogStatus
 from backend.data.unit_of_work import SqlAlchemyUOW
 from backend.model.edit.message_em import MessageEm
 from backend.model.edit.model_meta_em import ModelMetaEm
+from backend.model.edit.search_log_em import SearchLogEm
+from backend.model.edit.search_log_detail_em import SearchLogDetailEm
 from backend.repository.message_repository import MessageRepository
 from backend.repository.model_meta_repository import ModelMetaRepository
 from backend.repository.robot_repository import RobotRepository
 from backend.repository.songs_source_repository import SongsSourceRepository
+from backend.repository.search_log_repository import SearchLogRepository
+from backend.repository.search_log_detail_repository import SearchLogDetailRepository
 
 
 def get_system_message_queue_robot():
@@ -83,3 +87,33 @@ def finish_message(message_id: str, title: str = None, content: str = None, succ
         action_params=message_em.dict(),
     ) as uow:
         MessageRepository.update_entity(message_em, transaction=uow.transaction)
+
+
+def append_search_result(search_log_id: str, model_id: str, results: dict):
+    search_log: SearchLogEm = SearchLogRepository.fetch_by_id(search_log_id)
+
+    with SqlAlchemyUOW(
+        handler=get_system_message_queue_robot(),
+        action="append-search-result",
+        action_params={
+            "search_log_id": search_log_id,
+            "model_id": model_id,
+            "results": results,
+        },
+    ) as uow:
+        for result in results:
+            SearchLogDetailRepository.create_entity(
+                data=SearchLogDetailEm(
+                    search_log_id=search_log_id,
+                    model_id=model_id,
+                    result_song_id=result['song_id'],
+                    result_confidence=result['distances'],
+                ),
+                transaction=uow.transaction
+            )
+        search_log.status = EnumSearchLogStatus.finish.name
+        SearchLogRepository.update_entity(
+            data=search_log,
+            transaction=uow.transaction,
+            col_list=['status'],
+        )

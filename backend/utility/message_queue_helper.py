@@ -14,7 +14,9 @@ class MessageQueue:
     def __init__(self, rabbit_mq_conn_str: str = None):
         # print(rabbit_mq_conn_str)
         if rabbit_mq_conn_str:
-            self.conn = pika.BlockingConnection(pika.URLParameters(rabbit_mq_conn_str))
+            parameters = pika.URLParameters(rabbit_mq_conn_str)
+            parameters.heartbeat = 0
+            self.conn = pika.BlockingConnection(parameters)
             self.channel = self.conn.channel()
 
     def push_task(self, channel: str, method: str, data: any):

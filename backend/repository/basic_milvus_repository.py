@@ -1,11 +1,11 @@
+from typing import List
+
 from pymilvus import (
     FieldSchema, CollectionSchema, DataType,
     Collection,
 )
 from pymilvus.orm import utility
 from pymilvus.orm.exceptions import SchemaNotReadyException
-
-from backend.utility.singleton_helper import singleton_class
 
 
 class MilvusCollectionOrm:
@@ -34,8 +34,9 @@ class MilvusCollectionOrm:
     def init(self):
         self.schema = CollectionSchema(self.fields, self.__schema_description__)
         self.collection = Collection(self.__collection_name__, self.schema, using='default', consistency_level="Strong")
-        # for field, params in self.index.items():
-        #     self.collection.create_index(field, params)
+        if len(self.collection.indexes) <= 0:
+            for field, params in self.index.items():
+                self.collection.create_index(field, params)
         self.__refresh_insert_cache()
 
     def __refresh_insert_cache(self):
@@ -52,10 +53,26 @@ class MilvusCollectionOrm:
         self.collection.insert(self.insert_cache)
         self.__refresh_insert_cache()
 
-    def _search(self, search_params):
+    def _search(self, search_params, id_field: str, output_fields: List[str]):
         self.collection.load()
-        results = self.collection.search(
-            **search_params
-        )
-        self.collection.release()
+        try:
+            hit_ids = self.collection.search(
+                **search_params
+            )
+            results = []
+            for hit in hit_ids:
+                extra_list = self.collection.query(
+                    expr=f"{id_field} in {hit.ids}",
+                    output_fields=output_fields,
+                    consistency_level="Strong"
+                )
+                result = []
+                for extra, d in zip(extra_list, hit.distances):
+                    result.append({
+                        **extra,
+                        "distances": d,
+                    })
+                results.append(result)
+        finally:
+            self.collection.release()
         return results

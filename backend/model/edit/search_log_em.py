@@ -8,4 +8,4 @@ class SearchLogEm(BasicEditModel):
     search_text: str
     status: str
     create_at: Optional[datetime] = datetime.utcnow()
-    user_meta: str
+    user_meta: Optional[str]

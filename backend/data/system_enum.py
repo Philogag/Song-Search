@@ -63,3 +63,9 @@ class EnumMessageStatus(Enum):
     running = "进行中"
     failed = "失败"
     success = "成功"
+
+
+class EnumSearchLogStatus(Enum):
+    create = "创建"
+    running = "进行中"
+    finish = "完成"

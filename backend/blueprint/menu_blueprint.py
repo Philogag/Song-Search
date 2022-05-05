@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 @menu_blueprint.route("/get-menu-list", methods=["GET"])
-@route_permission.set(allow_all=True, name="获取当前用户菜单")
+@route_permission.set(name="获取当前用户菜单")
 def route_get_menu_list():
     carrier = BasicCarrier()
     try:

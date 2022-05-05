@@ -26,7 +26,7 @@ route_permission = RoutePermissionHelper(master_user_blueprint, group="用户管
 
 
 @master_user_blueprint.route("/get-current-user-info", methods=["GET"])
-@route_permission.set(login_required=True, allow_all=True, name="当前用户信息")
+@route_permission.set(login_required=True, name="当前用户信息")
 def route_get_current_user_info():
     carrier = BasicCarrier()
     try:
