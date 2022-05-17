@@ -8,8 +8,11 @@ services:
     restart: unless-stopped
     ports:
       - 80:80
+      - 8000:8000
+      - 8001:8001
     volumes:
       - ./nginx:/etc/nginx/conf.d
+      - ../log/nginx:/logs
       - ../frontend/desktop/dist:/dist/desktop
 
   sql:
@@ -23,29 +26,24 @@ services:
     environment:
       ALLOW_IP_RANGE: 0.0.0.0/0
 
-#  redis:
-#    image: redis:6.2-alpine
-#    restart: unless-stopped
-#    command:
-#      - "redis-server /etc/redis/redis.conf"
-#    ports:
-#      - "6379:6379"
-#    volumes:
-#      - ./conf/redis.conf:/etc/redis/redis.conf
-#      - ./data:/data
+  rabbit_mq:
+    image: rabbitmq:management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: "admin"
+      RABBITMQ_DEFAULT_PASS: "rootroot"
 
   backend:
-    build: 
-      context: .
-      dockerfile: dockerfile/backend.Dockerfile
+    image: sport_meeting_backend
     container_name: sport_meeting_backend
     restart: unless-stopped
-    command: gunicorn -c backend/gunicorn.py backend.app_entry:flask_app
     volumes:
       - ../backend:/deploy/src/backend
-      - ./log:/deploy/src/log
+      - ../log/backend:/deploy/src/log
     ports:
       - "8080:8080"
     environment:
-      FLASK_CONFIG_TOML: "./backend/app.production.toml"
-  
+      FLASK_CONFIG_TOML: "/deploy/src/backend/app.production.toml"
+

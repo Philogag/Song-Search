@@ -6,4 +6,4 @@
 
 /deploy/data
 /deploy/data.old
-*.toml
+# *.toml

@@ -11,13 +11,12 @@ npm run build
 
 ## restart backend
 # update database struct
-docker run -it --rm \
-    -v $workdir/backend:/deploy/src/backend \
-    -v $workdir/alembic.ini:/deploy/src/alembic.ini \
-    -v $workdir/alembic:/deploy/src/alembic \
-    --network=deploy_default \
-    deploy_backend \
-    alembic upgrade head
+
+# cd $workdir
+# ./deploy/hook_build_docker.sh
+
+cd $workdir/deploy
+docker-compose up -d
 
 docker restart sport_meeting_backend
 

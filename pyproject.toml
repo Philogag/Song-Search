@@ -1,0 +1,7 @@
+
+
+[tool.isort]
+profile = "hug"
+src_paths = ["backend"]
+multi_line_output = 3
+known_third_party = ["flask"]

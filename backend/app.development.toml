@@ -1,0 +1,41 @@
+app_name = 'the_project_backend'
+secret_key = "12345678"
+static_folder = "static"
+template_folder = "templates"
+timezone = "Asia/Shanghai"
+
+[logger]
+config_file = 'backend/logger.conf'
+
+# this is the server config
+[db]
+type = "postgresql+psycopg2"
+host = "192.168.1.155"
+port = 5432
+db = 'songs_search_dev'
+username = 'songs_search_user'
+password = 'songs_search_user'
+
+
+[redis]
+# host = "192.168.10.50"
+host = "192.168.1.155"
+port = 6379
+db = 2
+password = "redis"
+
+[rabbit_mq]
+type = "amqp"
+host = "192.168.1.155"
+port = "5672"
+username = "admin"
+password = "rootroot"
+db = '%2F'
+
+[milvus]
+host = "192.168.1.155"
+port = "19530"
+
+[jwt]
+access_token_expires = 86400
+refresh_token_expires = 86400
